@@ -21,7 +21,7 @@ export class App implements OnInit {
 
   async getMembers() {
     try {
-      return lastValueFrom(this.http.get('http://localhost:5247/members'));
+      return lastValueFrom(this.http.get('http://localhost:5247/api/members'));
     } catch (error) {
       console.error('Error fetching members:', error);
       throw error; // Rethrow the error after logging it  

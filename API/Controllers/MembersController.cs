@@ -1,16 +1,15 @@
 using API.Data;
 using API.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace API.Controllers;
 
-[ApiController]
-[Route("[controller]")]
-
-public class MembersController(AppDbContext context): ControllerBase // a base class for an MVC controller without view support. It provides access to the HttpContext, ModelState, and other properties and methods that are useful for handling HTTP requests and generating responses.
+[Authorize]
+public class MembersController(AppDbContext context): BaseAPIController // a base class for an MVC controller without view support. It provides access to the HttpContext, ModelState, and other properties and methods that are useful for handling HTTP requests and generating responses.
 {
+    [AllowAnonymous]
     [HttpGet]
-
     public async Task<ActionResult<IReadOnlyList<AppUser>>> GetMembers()
     {
         var members = await context.Users.ToListAsync();
