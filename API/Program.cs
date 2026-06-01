@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using API.Middleware;
+using Microsoft.OpenApi.Writers;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -20,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 // builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
    var tokenKey = builder.Configuration["TokenKey"] ?? throw new Exception("TokenKey is not configured");
@@ -35,6 +37,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseMiddleware<ExceptionMiddleware>();
+
 // if (app.Environment.IsDevelopment())
 // {
 //     app.UseSwagger();
@@ -43,13 +46,25 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 // app.UseHttpsRedirection();
 
-// app.UseAuthorization();
-
-
-
 app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200", "https://localhost:4200"));
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+try
+{
+    var context = services.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync(); // it will create db if it does not exist
+    await Seed.SeedUsers(context);
+
+}
+catch(Exception ex)
+{
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error Occurred during migration");
+    
+}
 
 app.Run();
